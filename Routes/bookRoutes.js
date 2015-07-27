@@ -16,11 +16,18 @@ var routes = function(Book) {
             res.status(201).send(book);
 
         })
+
+        //GET cu care iau informatii
         .get(function(req, res){
             var query = {};
             if(req.query.genre)
             {
                 query.genre = req.query.genre;
+            }
+
+            if(req.query.read)
+            {
+                query.read = req.query.read;
             }
 
             //send some data back
@@ -34,36 +41,52 @@ var routes = function(Book) {
 
         });
 
-    bookRouter.use('/:bookId', function(req, res, next){  //This is a middleware
-        Book.findById(req.params.bookId, function(err, book){
-            if(err)
-                res.status(500).send(err);
-            else if (book)  //daca cartea exista
+    //bookRouter.use('/:bookId', function(req, res, next){  //This is a middleware
+    //    Book.findById(req.params.bookId, function(err, book){
+    //        if(err)
+    //            res.status(500).send(err);
+    //        else if (book)  //daca cartea exista
+    //        {
+    //           req.book = book;//adaugam requestul la book
+    //           next();
+    //        }
+    //        else{
+    //            res.status(404).send('no book found');
+    //        }
+    //
+    //    });
+    //
+    //
+    //});
+
+    //Functia asta este echivalenta cu functia comentata de mai sus
+
+    var getBookById = function(bookId, callback, errorCallback) {
+        Book.findById(bookId, function(err, book){
+            //if(err)
+            //    res.status(500).send(err);
+            if(book) //daca exista cartea
             {
-               req.book = book;//adaugam requestul la book
-               next();
+
+                callback(book);
             }
-            else{
-                res.status(404).send('no book found');
+            else {
+                //res.status(404).send('No book found');
             }
+
 
         });
+    };
 
-
-    });
     bookRouter.route('/:bookId')
 
         //GET care imi aduce datele/iau informatii
         .get(function(req, res){
-            //var query = {};
-            //if(req.query.genre)
-            //{
-            //    query.genre = req.query.genre;
-            //}
-            //send some data back
+            getBookById(req.params.bookId, function(book)
+            {
+                res.json(book);
 
-            res.json(req.book); //daca nu gaseste cartea nu ajunge pana aici. Daca gaseste, da ca raspuns un json cu o carte care a fost ceruta
-
+            });
         })
 
         //PUT care imi face update sau imi inlocuieste doar la o parte din resursa
@@ -72,19 +95,35 @@ var routes = function(Book) {
                 //    if(err)
                 //        res.status(500).send(err);
                 //    else
-                    req.book.title = req.body.title; //tot ce era in req.book a fost inlocuit cu ce era in req.body
-                    req.book.author = req.body.author;
-                    req.book.genre = req.body.genre;
-                    req.book.read = req.body.read;
-                    req.book.save(function(err){
-                        if(err)
-                            res.status(500).send(err);
-                        else{
-                            res.json(req.book);
-
-                        }
-                    });
+            getBookById(req.params.bookId, function(book){
+                book.title = req.body.title;
+                book.author = req.body.author;
+                book.genre = req.body.genre;
+                book.read = req.body.read;
+                req.book = book;
+                book.save(function(err){
+                    if(err)
+                        res.status(500).send(err);
+                    else{
+                        req.book = book;
                         res.json(req.book);
+                    }
+                });
+
+            });
+                    //req.book.title = req.body.title; //tot ce era in req.book a fost inlocuit cu ce era in req.body
+                    //req.book.author = req.body.author;
+                    //req.book.genre = req.body.genre;
+                    //req.book.read = req.body.read;
+                    //req.book.save(function(err){
+                    //    if(err)
+                    //        res.status(500).send(err);
+                    //    else{
+                    //        res.json(req.book);
+                    //
+                    //    }
+                    //});
+                    //    res.json(req.book);
 
         })
 
@@ -115,6 +154,8 @@ var routes = function(Book) {
 
         //DELETE -> care imi sterge
         .delete(function(req, res){
+            var book = new Book(req.body);
+            req.book = book;
             req.book.remove(function(err){
                 if(err)
                     res.status(500).send(err);
