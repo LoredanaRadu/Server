@@ -1,6 +1,6 @@
 var express = require('express'),
     mongoose = require('mongoose'),
-    cors= require('cors'),
+    cors = require('cors'),
     bodyParser = require('body-parser');
 var db = mongoose.connect('mongodb://localhost/bookapi');
 
